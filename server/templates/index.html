@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ReadTogether</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .btn { padding: 10px 16px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; }
+    .ok { background-color: #c8f7c5; }
+    .misread { background-color: #f7c5c5; }
+    textarea { width: 100%; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>ReadTogether</h1>
+  <p>Paste your reading passage and click Start.</p>
+
+  <textarea id="passage">The small cat sat on the warm mat and looked out the window.</textarea><br>
+  <button id="startBtn" class="btn">Start</button>
+  <button id="stopBtn" class="btn" disabled>Stop</button>
+  <p id="status"></p>
+
+  <h3>Transcript:</h3>
+  <pre id="transcript"></pre>
+
+  <h3>Feedback:</h3>
+  <div id="wordFeedback"></div>
+  <p id="accuracy"></p>
+
+  <h3>Encouragement:</h3>
+  <p id="encouragement"></p>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
