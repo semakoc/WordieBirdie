@@ -12,7 +12,12 @@
   </style>
 </head>
 <body>
-  <h1 id="assignmentTitle">ReadTogether</h1>
+  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+    <a href="/" style="padding: 0; background: none; text-decoration: none; display: inline-block;">
+      <img src="/static/WordieBirdieLogo.png" alt="WordieBirdie Logo" style="width: 60px; height: auto;">
+    </a>
+    <h1 id="assignmentTitle" style="margin: 0;">ReadTogether</h1>
+  </div>
   <a href="/student">← Back to Assignments</a>
   
   <div>
@@ -20,9 +25,12 @@
     <input type="text" id="studentName" placeholder="Enter your name">
   </div>
   
-  <p>Paste your reading passage and click Start.</p>
+  <p>Read the passage below and click Start when ready.</p>
 
-  <textarea id="passage">The small cat sat on the warm mat and looked out the window.</textarea><br>
+  <div id="passageContainer" style="background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15); margin: 20px 0;">
+    <div id="passage" style="font-size: 24px; line-height: 1.8; color: #333; white-space: pre-wrap;"></div>
+  </div>
+  
   <button id="startBtn" class="btn">Start</button>
   <button id="stopBtn" class="btn" disabled>Stop</button>
   <p id="status"></p>
@@ -41,6 +49,13 @@
 
   <h3>Encouragement:</h3>
   <p id="encouragement"></p>
+  
+  <h3>Tips:</h3>
+  <div id="tips"></div>
+  
+  <h3>Questions:</h3>
+  <div id="questions"></div>
+  
   <button id="feedbackTtsBtn">🔊 Hear your feedback</button>
 
   <button id="submitBtn">Submit Assignment</button>
@@ -60,7 +75,7 @@
           if (response.ok) {
             const assignment = await response.json();
             document.getElementById('assignmentTitle').textContent = assignment.title;
-            document.getElementById('passage').value = assignment.text;
+            document.getElementById('passage').textContent = assignment.text;
             currentMinAccuracy = assignment.min_accuracy || 80;
           }
         } catch (err) {

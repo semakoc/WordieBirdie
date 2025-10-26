@@ -12,10 +12,19 @@
     .home-container {
       display: inline-block;
     }
+    .title-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    .logo {
+      width: 120px;
+      height: auto;
+    }
     h1 {
       font-size: 72px;
-      margin-bottom: 15px;
-      margin-top: 0;
+      margin: 0;
     }
     .tagline {
       font-size: 26px;
@@ -29,15 +38,20 @@
       font-size: 20px;
     }
     .home-container button {
-      font-size: 20px;
-      padding: 16px 40px;
-      margin: 10px;
+      font-size: 22px;
+      padding: 20px 50px;
+      margin: 12px;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
     }
   </style>
 </head>
 <body>
   <div class="home-container">
-    <h1>WordieBirdie</h1>
+    <div class="title-container">
+      <img src="/static/WordieBirdieLogo.png" alt="WordieBirdie Logo" class="logo">
+      <h1>WordieBirdie</h1>
+    </div>
     <p class="tagline">Soaring to new heights in reading, one word at a time.</p>
     <p>Choose your role:</p>
     <button onclick="window.location.href='/teacher'">Teacher</button>

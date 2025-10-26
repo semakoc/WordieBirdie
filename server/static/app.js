@@ -51,7 +51,7 @@ async function onStopRecording() {
   transcriptEl.textContent = transcript;
 
   // 2️⃣ Evaluate reading accuracy
-  const target = passageEl.value;
+  const target = passageEl.textContent || passageEl.value;
   const eRes = await fetch("/api/evaluate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -94,23 +94,33 @@ async function onStopRecording() {
   const coach = await cRes.json();
   console.log("Coach reply:", coach);
 
-  // 4️⃣ Display encouragement, tips, and questions
-  let output = "";
+  // 4️⃣ Display encouragement, tips, and questions in separate sections
+  const tipsEl = document.getElementById('tips');
+  const questionsEl = document.getElementById('questions');
+  
+  // Display encouragement
   if (coach.encouragement) {
-    output += `🌟 ${coach.encouragement}\n\n`;
+    encouragementEl.textContent = coach.encouragement;
   }
-
-  if (coach.tips && coach.tips.length) {
-    output += "💡 Tips:\n";
-    output += coach.tips.map(t => `• ${t.word}: ${t.tip}`).join("\n") + "\n\n";
+  
+  // Display tips
+  if (tipsEl) {
+    if (coach.tips && coach.tips.length > 0) {
+      tipsEl.innerHTML = coach.tips.map(t => `<p><strong>${t.word}:</strong> ${t.tip}</p>`).join('');
+    } else {
+      tipsEl.innerHTML = '<p>No tips for this reading.</p>';
+    }
   }
-
-  if (coach.questions && coach.questions.length) {
-    output += "🧩 Questions:\n";
-    output += coach.questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
+  
+  // Display questions
+  if (questionsEl) {
+    if (coach.questions && coach.questions.length > 0) {
+      questionsEl.innerHTML = coach.questions.map((q, i) => `<p>${i + 1}. ${q}</p>`).join('');
+    } else {
+      questionsEl.innerHTML = '<p>No questions available.</p>';
+    }
   }
-
-  encouragementEl.textContent = output.trim();
+  
   statusEl.textContent = "Done!";
 
   // ✅ Show TTS button once everything processed
@@ -125,7 +135,7 @@ async function onStopRecording() {
 
 // 🔊 Read the correct passage aloud
 async function speakCorrectText() {
-  const text = passageEl.value;
+  const text = passageEl.textContent || passageEl.value;
 
   const res = await fetch("/api/tts", {
     method: "POST",

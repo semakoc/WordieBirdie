@@ -9,6 +9,7 @@
 body {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
+  font-size: 18px;
   margin: 0;
   padding: 20px;
   background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
@@ -19,6 +20,7 @@ body {
 h1 {
   color: #1976d2;
   margin-bottom: 10px;
+  font-size: 42px;
 }
 
 h2 {
@@ -26,43 +28,52 @@ h2 {
   border-bottom: 2px solid #64b5f6;
   padding-bottom: 8px;
   margin-top: 30px;
+  font-size: 32px;
 }
 
 h3 {
   color: #1565c0;
   margin-top: 20px;
+  font-size: 26px;
 }
 
 a {
   color: #1976d2;
   text-decoration: none;
-  padding: 8px 12px;
+  padding: 12px 18px;
   background-color: #ffffff;
-  border-radius: 6px;
+  border-radius: 12px;
   display: inline-block;
   margin-bottom: 20px;
   transition: all 0.2s;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.15);
 }
 
 a:hover {
   background-color: #bbdefb;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.25);
 }
 
 /* Forms */
 form {
   background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
-  margin-bottom: 25px;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+  margin-bottom: 30px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #1565c0;
   font-weight: 500;
+  font-size: 18px;
 }
 
 input[type="text"],
@@ -71,11 +82,11 @@ input[type="file"],
 select,
 textarea {
   width: 100%;
-  padding: 10px;
+  padding: 14px;
   margin-bottom: 15px;
   border: 2px solid #90caf9;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 16px;
   font-family: inherit;
   transition: border-color 0.2s;
 }
@@ -86,6 +97,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 
 textarea {
@@ -95,32 +107,34 @@ textarea {
 
 /* Buttons */
 button, .btn {
-  padding: 12px 24px;
+  padding: 16px 32px;
   background-color: #2196f3;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  margin: 5px;
+  transition: all 0.3s;
+  margin: 8px;
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
 }
 
 button:hover, .btn:hover {
   background-color: #1976d2;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(25, 118, 210, 0.4);
 }
 
 button:disabled, .btn:disabled {
   background-color: #90caf9;
   cursor: not-allowed;
   transform: none;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
 }
 
 button:active, .btn:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 
 /* Radio buttons */
@@ -133,20 +147,28 @@ input[type="radio"] {
 ul {
   list-style: none;
   padding: 0;
-  margin: 15px 0;
+  margin: 20px 0;
 }
 
 li {
   background-color: white;
-  padding: 12px 15px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  border-left: 4px solid #2196f3;
-  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.1);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border-left: 5px solid #2196f3;
+  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.15);
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+li:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
 }
 
 li strong {
   color: #1565c0;
+  font-size: 20px;
 }
 
 /* Word feedback */
@@ -170,10 +192,12 @@ p {
 
 pre {
   background-color: #f5f5f5;
-  padding: 15px;
-  border-radius: 6px;
+  padding: 20px;
+  border-radius: 12px;
   border: 1px solid #b0bec5;
   overflow-x: auto;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 #status {
@@ -216,10 +240,12 @@ select {
 #message {
   color: #1976d2;
   font-weight: 500;
-  padding: 10px;
+  font-size: 18px;
+  padding: 16px;
   background-color: #e3f2fd;
-  border-radius: 6px;
-  margin-top: 15px;
+  border-radius: 12px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.15);
 }
 
 /* Assignment page specific styling */
@@ -239,8 +265,9 @@ pre#transcript {
 /* Student name input */
 input#studentName {
   display: inline-block;
-  width: 250px;
-  margin-left: 10px;
+  width: 300px;
+  margin-left: 15px;
+  font-size: 16px;
 }
 
 /* Divider lines in forms */
@@ -253,23 +280,25 @@ table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.1);
+  box-shadow: 0 4px 10px rgba(25, 118, 210, 0.15);
   margin-top: 20px;
 }
 
 th {
   background-color: #2196f3;
   color: white;
-  padding: 12px;
+  padding: 18px;
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 18px;
 }
 
 td {
-  padding: 12px;
+  padding: 16px 18px;
   border-bottom: 1px solid #e0e0e0;
+  font-size: 17px;
 }
 
 tr:hover {
