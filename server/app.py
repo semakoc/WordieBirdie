@@ -1,38 +1,32 @@
-# app.py
-# ------------------------------
-# ReadTogether Flask backend
-# ------------------------------
-
-import os
+# Imports 
+import os 
 import re
 import difflib
 import json
 import io
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for # for the web app
 from dotenv import load_dotenv
 import httpx
 from supabase import create_client, Client
-from PyPDF2 import PdfReader
-from werkzeug.security import generate_password_hash, check_password_hash
+from PyPDF2 import PdfReader # for pdf processing
+from werkzeug.security import generate_password_hash, check_password_hash # for password hashing
 from functools import wraps
 
-# 1️⃣ Load environment variables (like your OpenAI API key)
+# Loading environment variables like api keys
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# 2️⃣ Initialize Flask app
+# Initializing the Flask app
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
+app.secret_key = os.getenv("SECRET_KEY", "dev")
 
-# 3️⃣ Initialize Supabase client
+# starting the supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-# ----------------------------------------------------------
-# AUTHENTICATION DECORATORS
-# ----------------------------------------------------------
+# Authentication decorators, used for login routes
 
 def login_required(f):
     """Decorator to require login for a route."""
@@ -68,9 +62,7 @@ def teacher_required(f):
     return decorated_function
 
 
-# ----------------------------------------------------------
-# HELPER FUNCTIONS
-# ----------------------------------------------------------
+#helper functions
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from a PDF file and normalize it."""
@@ -80,14 +72,13 @@ def extract_text_from_pdf(pdf_file):
         for page in pdf_reader.pages:
             text += page.extract_text() + "\n"
         
-        # Normalize the text: join broken lines and fix spacing
-        # Replace newlines with spaces to create flowing text
+        # making the text clearn by normalizing it
         text = text.replace('\n', ' ')
         
         # Remove extra spaces
         text = re.sub(r'\s+', ' ', text)
         
-        # Split into sentences (ending with . ! or ?)
+        # Split into sentences ending with . ! or ?
         sentences = re.split(r'([.!?]+)', text)
         
         # Rejoin sentences properly with their punctuation
@@ -107,13 +98,13 @@ def extract_text_from_pdf(pdf_file):
         print(f"Error extracting PDF text: {e}")
         return None
 
-
+# normalizing the words
 def normalize_words(s: str):
     """Lowercase, remove punctuation, and split into words."""
     clean = re.sub(r"[^\w\s]", "", s.lower())
     return clean.split()
 
-
+# comparing target words to transcript words
 def align_words(target_text: str, transcript_text: str):
     """
     Compares target passage and transcript.
@@ -138,9 +129,7 @@ def align_words(target_text: str, transcript_text: str):
     return {"words": result, "accuracy": acc}
 
 
-# ----------------------------------------------------------
-# ROUTES
-# ----------------------------------------------------------
+# routes for html pages for flask app
 
 @app.get("/")
 def index():
@@ -174,7 +163,7 @@ def assignment():
     """Serves the assignment page."""
     return render_template("assignment.html")
 
-
+# route for signing up a new user, sending to supabase
 @app.post("/api/signup")
 def signup():
     """Create a new user account."""
@@ -191,15 +180,15 @@ def signup():
         if role not in ["student", "teacher"]:
             return jsonify({"error": "Invalid role"}), 400
         
-        # Check if user already exists
+        # Checking if user alr exists
         existing = supabase.table("users").select("*").eq("email", email).execute()
         if existing.data:
             return jsonify({"error": "Email already registered"}), 400
         
-        # Hash password
+        # Hashing the password for better security
         password_hash = generate_password_hash(password)
         
-        # Insert user into database
+        # Inserting user into database
         user_data = {
             "full_name": full_name,
             "email": email,
@@ -215,7 +204,7 @@ def signup():
         session['full_name'] = user['full_name']
         session['email'] = user['email']
         session['role'] = user['role']
-        
+        #reutrns the user's role and name and success 
         return jsonify({
             "message": "Account created successfully",
             "role": user['role'],
@@ -224,7 +213,7 @@ def signup():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for logging in a user, sending to supabase
 @app.post("/api/login")
 def login():
     """Log in an existing user."""
@@ -262,14 +251,14 @@ def login():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for logging out a user
 @app.post("/api/logout")
 def logout():
     """Log out the current user."""
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 
-
+# route for getting the current user
 @app.get("/api/current-user")
 def current_user():
     """Get the current logged-in user."""
@@ -283,7 +272,7 @@ def current_user():
         "role": session['role']
     }), 200
 
-
+# route for using the whisper api to transcribe audio
 @app.post("/api/transcribe")
 def transcribe():
     """Send audio to OpenAI Whisper API and return transcript."""
@@ -312,7 +301,7 @@ def transcribe():
     out = r.json()
     return jsonify({"text": out.get("text", "")})
 
-
+# route for evaluating the reading accuracy by comparing target passage to transcript
 @app.post("/api/evaluate")
 def evaluate():
     """Compares target passage vs. transcript and labels each word."""
@@ -322,7 +311,7 @@ def evaluate():
     aligned = align_words(target, transcript)
     return jsonify(aligned)
 
-
+#route for using the gpt api to generate encouragement, tips, and questions using prompt
 @app.post("/api/coach")
 def coach():
     """
@@ -351,7 +340,7 @@ def coach():
     else:
         tutor_desc = "You are a kind reading tutor."
 
-    # 🧠 Strict, compact prompt that forces all keys
+    
     prompt = (
         f"{tutor_desc}\n"
         "Return ONLY a JSON object exactly like this:\n"
@@ -413,7 +402,7 @@ def coach():
         return jsonify(fallback)
     
 
-
+# route for using the gpt api FOR TTS
 @app.post("/api/tts")
 def tts():
     """Convert corrected target passage to speech using OpenAI TTS."""
@@ -448,7 +437,7 @@ def tts():
         "Content-Type": "audio/mpeg"
     }
 
-
+# route for creating a new assignment, and updating the database from teachers end
 @app.post("/api/assignments")
 def create_assignment():
     """Create a new assignment (teacher only)."""
@@ -482,7 +471,7 @@ def create_assignment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for getting all assignments from the database on student page
 @app.get("/api/assignments")
 def get_assignments():
     """Get all assignments (for students)."""
@@ -492,7 +481,7 @@ def get_assignments():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for getting a specific assignment by ID on student page
 @app.get("/api/assignments/<int:assignment_id>")
 def get_assignment(assignment_id):
     """Get a specific assignment by ID."""
@@ -504,7 +493,7 @@ def get_assignment(assignment_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for getting all submissions from the database on teacher page
 @app.get("/api/submissions")
 def get_submissions():
     """Get all submissions (for teacher)."""
@@ -514,7 +503,7 @@ def get_submissions():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for getting a specific submission by assignment ID on teacher page
 @app.get("/api/submissions/<int:assignment_id>")
 def get_submission(assignment_id):
     """Get submission for a specific assignment."""
@@ -526,7 +515,7 @@ def get_submission(assignment_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for creating or updating a submission with accuracy and words missed so the teacher can see it
 @app.post("/api/submissions")
 @login_required
 def create_or_update_submission():
@@ -567,7 +556,7 @@ def create_or_update_submission():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# route for submitting an assignment, marking it as submitted so the teacher can see it
 @app.post("/api/submit-assignment")
 @login_required
 def submit_assignment():
@@ -596,9 +585,6 @@ def submit_assignment():
 
 
 
-# ----------------------------------------------------------
-# RUN THE APP
-# ----------------------------------------------------------
-
+#running the actual app
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

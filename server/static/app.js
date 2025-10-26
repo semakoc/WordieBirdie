@@ -1,8 +1,4 @@
-// static/app.js
-// --------------------------------------
-// ReadTogether frontend logic
-// --------------------------------------
-
+// getting all the elements from the html page like buttons and text areas
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const passageEl = document.getElementById("passage");
@@ -11,12 +7,12 @@ const transcriptEl = document.getElementById("transcript");
 const wordFeedbackEl = document.getElementById("wordFeedback");
 const accuracyEl = document.getElementById("accuracy");
 const encouragementEl = document.getElementById("encouragement");
-const ttsBtn = document.getElementById("ttsBtn"); // 👈 NEW
+const ttsBtn = document.getElementById("ttsBtn"); 
 
 let mediaRecorder;
 let chunks = [];
 
-// 🎙️ Start recording
+// starting the recording
 startBtn.onclick = async () => {
   chunks = [];
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -27,10 +23,10 @@ startBtn.onclick = async () => {
   startBtn.disabled = true;
   stopBtn.disabled = false;
   statusEl.textContent = "Recording…";
-  ttsBtn.style.display = "none"; // Hide TTS button until done 👈 NEW
+  ttsBtn.style.display = "none"; 
 };
 
-// ⏹️ Stop recording
+// Stop recording
 stopBtn.onclick = () => {
   mediaRecorder.stop();
   startBtn.disabled = false;
@@ -38,19 +34,19 @@ stopBtn.onclick = () => {
   statusEl.textContent = "Processing…";
 };
 
-// 🧠 Process after recording stops
+// Process after recording stops
 async function onStopRecording() {
   const blob = new Blob(chunks, { type: "audio/webm" });
   const fd = new FormData();
   fd.append("audio", blob, "audio.webm");
 
-  // 1️⃣ Transcribe
+  // Transcribe
   const tRes = await fetch("/api/transcribe", { method: "POST", body: fd });
   const tJson = await tRes.json();
   const transcript = tJson.text || "";
   transcriptEl.textContent = transcript;
 
-  // 2️⃣ Evaluate reading accuracy
+  // Evaluate reading accuracy
   const target = passageEl.textContent || passageEl.value;
   const eRes = await fetch("/api/evaluate", {
     method: "POST",
@@ -63,7 +59,7 @@ async function onStopRecording() {
   // Save submission data
   await saveSubmissionData(evalJson);
 
-  // 3️⃣ Ask GPT for encouragement, tips, and questions
+  // Ask GPT for encouragement, tips, and questions
   const misreads = evalJson.words
     .filter(w => w.status === "misread")
     .map(w => w.word);
@@ -94,7 +90,7 @@ async function onStopRecording() {
   const coach = await cRes.json();
   console.log("Coach reply:", coach);
 
-  // 4️⃣ Display encouragement, tips, and questions in separate sections
+  // Display encouragement, tips, and questions in separate sections
   const tipsEl = document.getElementById('tips');
   const questionsEl = document.getElementById('questions');
   
@@ -123,7 +119,7 @@ async function onStopRecording() {
   
   statusEl.textContent = "Done!";
 
-  // ✅ Show TTS button once everything processed
+  // Show TTS button once everything processed
   ttsBtn.style.display = "inline-block";
   
   // Show feedback TTS button
@@ -133,7 +129,7 @@ async function onStopRecording() {
   }
 }
 
-// 🔊 Read the correct passage aloud
+// Read the correct passage aloud
 async function speakCorrectText() {
   const text = passageEl.textContent || passageEl.value;
 
@@ -154,9 +150,9 @@ async function speakCorrectText() {
   audio.play();
 }
 
-ttsBtn.onclick = speakCorrectText; // 👈 NEW BINDING
+ttsBtn.onclick = speakCorrectText; // NEW BINDING
 
-// 🔊 Read the feedback aloud
+// Read the feedback aloud
 async function speakFeedback() {
   const feedbackText = encouragementEl.textContent;
   
@@ -188,7 +184,7 @@ if (feedbackTtsBtn) {
   feedbackTtsBtn.onclick = speakFeedback;
 }
 
-// 🧾 Highlight words and show accuracy results
+// Highlight words and show accuracy results
 function renderWordFeedback(data) {
   const words = data.words || [];
   accuracyEl.textContent = `Accuracy: ${data.accuracy || 0}%`;
@@ -197,7 +193,7 @@ function renderWordFeedback(data) {
     .join(" ");
 }
 
-// 💾 Save submission data to backend
+// Save submission data to backend
 async function saveSubmissionData(evalJson) {
   // Get assignment ID from URL
   const urlParams = new URLSearchParams(window.location.search);
