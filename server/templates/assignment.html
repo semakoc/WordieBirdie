@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ReadTogether</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    #ttsBtn { display: none; }
+    #feedbackTtsBtn { display: none; }
+    #submitBtn { display: none; }
+    #ttsAudio { display: none; }
+  </style>
+</head>
+<body>
+  <h1 id="assignmentTitle">ReadTogether</h1>
+  <a href="/student">← Back to Assignments</a>
+  
+  <div>
+    <label for="studentName">Your Name:</label>
+    <input type="text" id="studentName" placeholder="Enter your name">
+  </div>
+  
+  <p>Paste your reading passage and click Start.</p>
+
+  <textarea id="passage">The small cat sat on the warm mat and looked out the window.</textarea><br>
+  <button id="startBtn" class="btn">Start</button>
+  <button id="stopBtn" class="btn" disabled>Stop</button>
+  <p id="status"></p>
+
+
+    <!-- ✅ TTS Feature -->
+  <button id="ttsBtn">🔊 Hear it correctly</button>
+  <audio id="ttsAudio"></audio>
+
+  <h3>Transcript:</h3>
+  <pre id="transcript"></pre>
+
+  <h3>Feedback:</h3>
+  <div id="wordFeedback"></div>
+  <p id="accuracy"></p>
+
+  <h3>Encouragement:</h3>
+  <p id="encouragement"></p>
+  <button id="feedbackTtsBtn">🔊 Hear your feedback</button>
+
+  <button id="submitBtn">Submit Assignment</button>
+
+  <script>
+    let currentAssignmentId = null;
+    let currentMinAccuracy = null;
+    // Load assignment if ID is provided in URL
+    async function loadAssignment() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const assignmentId = urlParams.get('id');
+      
+      if (assignmentId) {
+        try {
+          currentAssignmentId = assignmentId;
+          const response = await fetch(`/api/assignments/${assignmentId}`);
+          if (response.ok) {
+            const assignment = await response.json();
+            document.getElementById('assignmentTitle').textContent = assignment.title;
+            document.getElementById('passage').value = assignment.text;
+            currentMinAccuracy = assignment.min_accuracy || 80;
+          }
+        } catch (err) {
+          console.error('Error loading assignment:', err);
+        }
+      }
+    }
+    
+    // Monitor accuracy to show/hide submit button
+    function checkAccuracy() {
+      const accuracyText = document.getElementById('accuracy').textContent;
+      const match = accuracyText.match(/(\d+\.?\d*%)/);
+      
+      if (match && currentMinAccuracy !== null) {
+        const accuracy = parseFloat(match[1]);
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (accuracy >= currentMinAccuracy) {
+          submitBtn.style.display = 'block';
+        } else {
+          submitBtn.style.display = 'none';
+        }
+      }
+    }
+    
+    // Submit button click handler
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+      if (!currentAssignmentId) return;
+      
+      const studentName = document.getElementById('studentName').value.trim();
+      if (!studentName) {
+        alert('Please enter your name before submitting');
+        return;
+      }
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      
+      try {
+        const response = await fetch('/api/submit-assignment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            assignment_id: parseInt(currentAssignmentId),
+            student_name: studentName
+          })
+        });
+        
+        if (response.ok) {
+          alert('Assignment submitted successfully!');
+          submitBtn.textContent = 'Submitted ✓';
+          submitBtn.disabled = true;
+        } else {
+          alert('Error submitting assignment');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Assignment';
+        }
+      } catch (err) {
+        alert('Error submitting assignment: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Assignment';
+      }
+    });
+    
+    loadAssignment();
+    
+    // Check accuracy periodically (after app.js runs)
+    setTimeout(() => {
+      setInterval(checkAccuracy, 1000);
+    }, 2000);
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

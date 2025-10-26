@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ReadTogether - Teacher</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    #studentSelector { display: block; }
+    #assignmentSelector { display: none; }
+    #submissionsList { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Teacher Dashboard</h1>
+  <a href="/">← Back to Home</a>
+  
+  <h2>Create New Assignment</h2>
+  <button id="toggleFormBtn" onclick="toggleAssignmentForm()">Create New Assignment</button>
+  
+  <div id="assignmentFormContainer" style="display:none;">
+    <form id="assignmentForm">
+      <div>
+        <label for="title">Assignment Title:</label><br>
+        <input type="text" id="title" name="title" required>
+      </div>
+      <br>
+      
+      <div>
+        <label for="grade_level">Grade Level:</label><br>
+        <select id="grade_level" name="grade_level" required>
+          <option value="">Select Grade Level</option>
+          <option value="K">Kindergarten</option>
+          <option value="1">1st Grade</option>
+          <option value="2">2nd Grade</option>
+          <option value="3">3rd Grade</option>
+          <option value="4">4th Grade</option>
+          <option value="5">5th Grade</option>
+          <option value="6">6th Grade</option>
+          <option value="7">7th Grade</option>
+          <option value="8">8th Grade</option>
+        </select>
+      </div>
+      <br>
+      
+      <div>
+        <label for="pdf">Upload PDF:</label><br>
+        <input type="file" id="pdf" name="pdf" accept=".pdf" required>
+      </div>
+      <br>
+      
+      <div>
+        <label for="min_accuracy">Minimum Accuracy Required (%):</label><br>
+        <input type="number" id="min_accuracy" name="min_accuracy" value="80" min="0" max="100" required>
+      </div>
+      <br>
+      
+      <button type="submit" id="submitBtn">Create Assignment</button>
+    </form>
+  </div>
+  
+  <h2>View Submissions</h2>
+  <div>
+    <label>View By:</label><br>
+    <input type="radio" id="viewByStudent" name="viewBy" value="student" checked> By Student
+    <input type="radio" id="viewByAssignment" name="viewBy" value="assignment"> By Assignment
+  </div>
+  <br>
+  
+  <div id="studentSelector">
+    <label for="studentSelect">Select Student:</label><br>
+    <select id="studentSelect" onchange="displaySubmissions()">
+      <option value="">Select a student...</option>
+    </select>
+  </div>
+  
+  <div id="assignmentSelector">
+    <label for="assignmentSelect">Select Assignment:</label><br>
+    <select id="assignmentSelect" onchange="displaySubmissions()">
+      <option value="">Select an assignment...</option>
+    </select>
+  </div>
+  
+  <div id="submissionsList">
+    <p>Select a student or assignment to view submissions</p>
+  </div>
+  
+  <p id="message"></p>
+  
+  <script>
+    let allAssignments = [];
+    let allSubmissions = [];
+    let studentsList = [];
+    
+    // Toggle assignment form visibility
+    function toggleAssignmentForm() {
+      const formContainer = document.getElementById('assignmentFormContainer');
+      const btn = document.getElementById('toggleFormBtn');
+      
+      if (formContainer.style.display === 'none') {
+        formContainer.style.display = 'block';
+        btn.textContent = 'Hide Form';
+      } else {
+        formContainer.style.display = 'none';
+        btn.textContent = 'Create New Assignment';
+      }
+    }
+    
+    // Handle view mode change
+    document.getElementById('viewByStudent').addEventListener('change', () => {
+      document.getElementById('studentSelector').style.display = 'block';
+      document.getElementById('assignmentSelector').style.display = 'none';
+      document.getElementById('submissionsList').innerHTML = '<p>Select a student to view submissions</p>';
+    });
+    
+    document.getElementById('viewByAssignment').addEventListener('change', () => {
+      document.getElementById('studentSelector').style.display = 'none';
+      document.getElementById('assignmentSelector').style.display = 'block';
+      document.getElementById('submissionsList').innerHTML = '<p>Select an assignment to view submissions</p>';
+    });
+    
+    // Initialize data on page load
+    async function initializeData() {
+      await loadData();
+      populateDropdowns();
+    }
+    
+    // Load all data
+    async function loadData() {
+      try {
+        // Get assignments
+        const assignmentsRes = await fetch('/api/assignments');
+        allAssignments = await assignmentsRes.json();
+        
+        // Get submissions
+        const response = await fetch('/api/submissions');
+        allSubmissions = await response.json();
+        
+        // Get unique student names
+        const studentSet = new Set();
+        allSubmissions.forEach(sub => {
+          if (sub.student_name) {
+            studentSet.add(sub.student_name);
+          }
+        });
+        studentsList = Array.from(studentSet).sort();
+        
+      } catch (err) {
+        console.error('Error loading data:', err);
+      }
+    }
+    
+    // Populate dropdowns
+    function populateDropdowns() {
+      const studentSelect = document.getElementById('studentSelect');
+      const assignmentSelect = document.getElementById('assignmentSelect');
+      
+      // Clear existing options (keep first option)
+      while (studentSelect.options.length > 1) {
+        studentSelect.remove(1);
+      }
+      while (assignmentSelect.options.length > 1) {
+        assignmentSelect.remove(1);
+      }
+      
+      // Add students
+      studentsList.forEach(student => {
+        const option = document.createElement('option');
+        option.value = student;
+        option.textContent = student;
+        studentSelect.appendChild(option);
+      });
+      
+      // Add assignments
+      allAssignments.forEach(assignment => {
+        const option = document.createElement('option');
+        option.value = assignment.id;
+        option.textContent = assignment.title;
+        assignmentSelect.appendChild(option);
+      });
+    }
+    
+    // Display submissions based on current view mode and selection
+    function displaySubmissions() {
+      const listDiv = document.getElementById('submissionsList');
+      const viewByStudent = document.getElementById('viewByStudent').checked;
+      
+      if (viewByStudent) {
+        const selectedStudent = document.getElementById('studentSelect').value;
+        if (!selectedStudent) {
+          listDiv.innerHTML = '<p>Select a student to view submissions</p>';
+          return;
+        }
+        displayByStudent(selectedStudent);
+      } else {
+        const selectedAssignmentId = document.getElementById('assignmentSelect').value;
+        if (!selectedAssignmentId) {
+          listDiv.innerHTML = '<p>Select an assignment to view submissions</p>';
+          return;
+        }
+        displayByAssignment(selectedAssignmentId);
+      }
+    }
+    
+    // Display all submissions for a specific student
+    function displayByStudent(studentName) {
+      const studentSubs = allSubmissions.filter(sub => sub.student_name === studentName);
+      
+      if (studentSubs.length === 0) {
+        document.getElementById('submissionsList').innerHTML = 
+          `<p>No submissions found for ${studentName}</p>`;
+        return;
+      }
+      
+      // Get assignments map
+      const assignmentsMap = {};
+      allAssignments.forEach(a => { assignmentsMap[a.id] = a; });
+      
+      let html = `<h3>Submissions for ${studentName}</h3>`;
+      html += `<table><thead><tr><th>Assignment</th><th>Status</th><th>Accuracy</th><th>Words Missed</th></tr></thead><tbody>`;
+      
+      studentSubs.forEach(sub => {
+        const assignment = assignmentsMap[sub.assignment_id];
+        const assignmentTitle = assignment ? assignment.title : `Assignment #${sub.assignment_id}`;
+        const status = sub.submitted ? '✅ Submitted' : '❌ Not Submitted';
+        const accuracy = sub.accuracy !== null ? sub.accuracy + '%' : 'N/A';
+        const wordsMissed = sub.words_missed && sub.words_missed.length > 0 ? sub.words_missed.join(', ') : 'None';
+        
+        html += `<tr>
+          <td>${assignmentTitle}</td>
+          <td>${status}</td>
+          <td>${accuracy}</td>
+          <td>${wordsMissed}</td>
+        </tr>`;
+      });
+      
+      html += '</tbody></table>';
+      document.getElementById('submissionsList').innerHTML = html;
+    }
+    
+    // Display all submissions for a specific assignment
+    function displayByAssignment(assignmentId) {
+      const assignmentSubs = allSubmissions.filter(sub => sub.assignment_id == assignmentId);
+      
+      if (assignmentSubs.length === 0) {
+        document.getElementById('submissionsList').innerHTML = 
+          '<p>No submissions found for this assignment</p>';
+        return;
+      }
+      
+      // Get assignment
+      const assignment = allAssignments.find(a => a.id == assignmentId);
+      const assignmentTitle = assignment ? assignment.title : `Assignment #${assignmentId}`;
+      
+      let html = `<h3>${assignmentTitle}</h3>`;
+      html += `<table><thead><tr><th>Student Name</th><th>Status</th><th>Accuracy</th><th>Words Missed</th></tr></thead><tbody>`;
+      
+      assignmentSubs.forEach(sub => {
+        const status = sub.submitted ? '✅ Submitted' : '❌ Not Submitted';
+        const accuracy = sub.accuracy !== null ? sub.accuracy + '%' : 'N/A';
+        const wordsMissed = sub.words_missed && sub.words_missed.length > 0 ? sub.words_missed.join(', ') : 'None';
+        
+        html += `<tr>
+          <td><strong>${sub.student_name}</strong></td>
+          <td>${status}</td>
+          <td>${accuracy}</td>
+          <td>${wordsMissed}</td>
+        </tr>`;
+      });
+      
+      html += '</tbody></table>';
+      document.getElementById('submissionsList').innerHTML = html;
+    }
+    
+    // Initialize on page load
+    initializeData();
+    
+    document.getElementById('assignmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const messageEl = document.getElementById('message');
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing PDF...';
+      messageEl.textContent = 'Extracting text from PDF, please wait...';
+      
+      const formData = new FormData();
+      formData.append('title', document.getElementById('title').value);
+      formData.append('grade_level', document.getElementById('grade_level').value);
+      formData.append('min_accuracy', document.getElementById('min_accuracy').value);
+      
+      const pdfFile = document.getElementById('pdf').files[0];
+      if (pdfFile) {
+        formData.append('pdf', pdfFile);
+      }
+      
+      try {
+        const response = await fetch('/api/assignments', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          messageEl.textContent = 'Assignment created successfully! Text has been extracted from the PDF.';
+          document.getElementById('assignmentForm').reset();
+          initializeData(); // Refresh data and dropdowns
+          toggleAssignmentForm(); // Hide the form after successful submission
+        } else {
+          const error = await response.json();
+          messageEl.textContent = 'Error: ' + error.error;
+        }
+      } catch (err) {
+        messageEl.textContent = 'Error creating assignment: ' + err.message;
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Assignment';
+      }
+    });
+  </script>
+</body>
+</html>
+

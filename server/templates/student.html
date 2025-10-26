@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ReadTogether - Student</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Student Dashboard</h1>
+  <a href="/">← Back to Home</a>
+  
+  <h2>Your Assignments</h2>
+  <div id="assignmentsList">
+    <p>Loading assignments...</p>
+  </div>
+  
+  <script>
+    async function loadAssignments() {
+      try {
+        const response = await fetch('/api/assignments');
+        const assignments = await response.json();
+        
+        const listDiv = document.getElementById('assignmentsList');
+        
+        if (assignments.length === 0) {
+          listDiv.innerHTML = '<p>No assignments available yet.</p>';
+          return;
+        }
+        
+        listDiv.innerHTML = '<ul>' + 
+          assignments.map(assignment => 
+            `<li>
+              <strong>${assignment.title}</strong> (Grade ${assignment.grade_level})
+              <button onclick="openAssignment(${assignment.id})">Start Assignment</button>
+            </li>`
+          ).join('') + 
+        '</ul>';
+      } catch (err) {
+        document.getElementById('assignmentsList').innerHTML = 
+          '<p>Error loading assignments: ' + err.message + '</p>';
+      }
+    }
+    
+    function openAssignment(assignmentId) {
+      window.location.href = `/assignment?id=${assignmentId}`;
+    }
+    
+    loadAssignments();
+  </script>
+</body>
+</html>
+

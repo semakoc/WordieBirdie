@@ -2,34 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>ReadTogether</title>
+  <title>WordieBirdie - Home</title>
+  <link rel="stylesheet" href="/static/style.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 24px; }
-    .btn { padding: 10px 16px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; }
-    .ok { background-color: #c8f7c5; }
-    .misread { background-color: #f7c5c5; }
-    textarea { width: 100%; height: 100px; }
+    body {
+      text-align: center;
+      padding-top: 80px;
+    }
+    .home-container {
+      display: inline-block;
+    }
+    h1 {
+      font-size: 72px;
+      margin-bottom: 15px;
+      margin-top: 0;
+    }
+    .tagline {
+      font-size: 26px;
+      color: #1565c0;
+      font-style: italic;
+      margin-bottom: 40px;
+      font-weight: 400;
+    }
+    p {
+      margin-bottom: 25px;
+      font-size: 20px;
+    }
+    .home-container button {
+      font-size: 20px;
+      padding: 16px 40px;
+      margin: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>ReadTogether</h1>
-  <p>Paste your reading passage and click Start.</p>
-
-  <textarea id="passage">The small cat sat on the warm mat and looked out the window.</textarea><br>
-  <button id="startBtn" class="btn">Start</button>
-  <button id="stopBtn" class="btn" disabled>Stop</button>
-  <p id="status"></p>
-
-  <h3>Transcript:</h3>
-  <pre id="transcript"></pre>
-
-  <h3>Feedback:</h3>
-  <div id="wordFeedback"></div>
-  <p id="accuracy"></p>
-
-  <h3>Encouragement:</h3>
-  <p id="encouragement"></p>
-
-  <script src="/static/app.js"></script>
+  <div class="home-container">
+    <h1>WordieBirdie</h1>
+    <p class="tagline">Soaring to new heights in reading, one word at a time.</p>
+    <p>Choose your role:</p>
+    <button onclick="window.location.href='/teacher'">Teacher</button>
+    <button onclick="window.location.href='/student'">Student</button>
+  </div>
 </body>
 </html>
