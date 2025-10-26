@@ -9,21 +9,46 @@
     #feedbackTtsBtn { display: none; }
     #submitBtn { display: none; }
     #ttsAudio { display: none; }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-info {
+      font-size: 16px;
+      color: #1565c0;
+      margin-top: 5px;
+    }
+    .logout-btn {
+      background-color: #f44336;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    .logout-btn:hover {
+      background-color: #d32f2f;
+    }
   </style>
 </head>
 <body>
-  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-    <a href="/" style="padding: 0; background: none; text-decoration: none; display: inline-block;">
-      <img src="/static/WordieBirdieLogo.png" alt="WordieBirdie Logo" style="width: 60px; height: auto;">
-    </a>
-    <h1 id="assignmentTitle" style="margin: 0;">ReadTogether</h1>
+  <div class="header-bar">
+    <div class="header-left">
+      <a href="/" style="padding: 0; background: none; text-decoration: none; display: inline-block;">
+        <img src="/static/WordyBirdyLogo.png" alt="WordyBirdy Logo" style="width: 60px; height: auto;">
+      </a>
+      <div>
+        <h1 id="assignmentTitle" style="margin: 0;">ReadTogether</h1>
+        <p class="user-info" id="studentInfo">Loading...</p>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
   </div>
   <a href="/student">← Back to Assignments</a>
-  
-  <div>
-    <label for="studentName">Your Name:</label>
-    <input type="text" id="studentName" placeholder="Enter your name">
-  </div>
   
   <p>Read the passage below and click Start when ready.</p>
 
@@ -63,6 +88,35 @@
   <script>
     let currentAssignmentId = null;
     let currentMinAccuracy = null;
+    let currentUser = null;
+    
+    // Load user info
+    async function loadUserInfo() {
+      try {
+        const response = await fetch('/api/current-user');
+        if (response.ok) {
+          currentUser = await response.json();
+          document.getElementById('studentInfo').textContent = `Student: ${currentUser.full_name}`;
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Error loading user info:', err);
+        window.location.href = '/';
+      }
+    }
+    
+    // Handle logout
+    async function handleLogout() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Error logging out:', err);
+        window.location.href = '/';
+      }
+    }
+    
     // Load assignment if ID is provided in URL
     async function loadAssignment() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -105,12 +159,6 @@
     document.getElementById('submitBtn').addEventListener('click', async () => {
       if (!currentAssignmentId) return;
       
-      const studentName = document.getElementById('studentName').value.trim();
-      if (!studentName) {
-        alert('Please enter your name before submitting');
-        return;
-      }
-      
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting...';
@@ -122,8 +170,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            assignment_id: parseInt(currentAssignmentId),
-            student_name: studentName
+            assignment_id: parseInt(currentAssignmentId)
           })
         });
         
@@ -143,6 +190,8 @@
       }
     });
     
+    // Initialize
+    loadUserInfo();
     loadAssignment();
     
     // Check accuracy periodically (after app.js runs)

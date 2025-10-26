@@ -8,11 +8,13 @@ import re
 import difflib
 import json
 import io
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from dotenv import load_dotenv
 import httpx
 from supabase import create_client, Client
 from PyPDF2 import PdfReader
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 # 1️⃣ Load environment variables (like your OpenAI API key)
 load_dotenv()
@@ -22,9 +24,48 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # 2️⃣ Initialize Flask app
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 
 # 3️⃣ Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+# ----------------------------------------------------------
+# AUTHENTICATION DECORATORS
+# ----------------------------------------------------------
+
+def login_required(f):
+    """Decorator to require login for a route."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def student_required(f):
+    """Decorator to require student role."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('index'))
+        if session.get('role') != 'student':
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def teacher_required(f):
+    """Decorator to require teacher role."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('index'))
+        if session.get('role') != 'teacher':
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # ----------------------------------------------------------
@@ -103,26 +144,144 @@ def align_words(target_text: str, transcript_text: str):
 
 @app.get("/")
 def index():
-    """Serves the main web page (index.html)."""
+    """Serves the main web page (login/signup page)."""
+    # If already logged in, redirect to appropriate dashboard
+    if 'user_id' in session:
+        if session.get('role') == 'student':
+            return redirect(url_for('student'))
+        elif session.get('role') == 'teacher':
+            return redirect(url_for('teacher'))
     return render_template("index.html")
 
 
 @app.get("/teacher")
+@teacher_required
 def teacher():
     """Serves the teacher page."""
     return render_template("teacher.html")
 
 
 @app.get("/student")
+@student_required
 def student():
     """Serves the student page."""
     return render_template("student.html")
 
 
 @app.get("/assignment")
+@student_required
 def assignment():
     """Serves the assignment page."""
     return render_template("assignment.html")
+
+
+@app.post("/api/signup")
+def signup():
+    """Create a new user account."""
+    try:
+        data = request.get_json()
+        full_name = data.get("full_name")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role")
+        
+        if not all([full_name, email, password, role]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        if role not in ["student", "teacher"]:
+            return jsonify({"error": "Invalid role"}), 400
+        
+        # Check if user already exists
+        existing = supabase.table("users").select("*").eq("email", email).execute()
+        if existing.data:
+            return jsonify({"error": "Email already registered"}), 400
+        
+        # Hash password
+        password_hash = generate_password_hash(password)
+        
+        # Insert user into database
+        user_data = {
+            "full_name": full_name,
+            "email": email,
+            "password_hash": password_hash,
+            "role": role
+        }
+        
+        result = supabase.table("users").insert(user_data).execute()
+        user = result.data[0]
+        
+        # Set session
+        session['user_id'] = user['id']
+        session['full_name'] = user['full_name']
+        session['email'] = user['email']
+        session['role'] = user['role']
+        
+        return jsonify({
+            "message": "Account created successfully",
+            "role": user['role'],
+            "full_name": user['full_name']
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.post("/api/login")
+def login():
+    """Log in an existing user."""
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password required"}), 400
+        
+        # Get user from database
+        result = supabase.table("users").select("*").eq("email", email).execute()
+        
+        if not result.data:
+            return jsonify({"error": "Invalid email or password"}), 401
+        
+        user = result.data[0]
+        
+        # Check password
+        if not check_password_hash(user['password_hash'], password):
+            return jsonify({"error": "Invalid email or password"}), 401
+        
+        # Set session
+        session['user_id'] = user['id']
+        session['full_name'] = user['full_name']
+        session['email'] = user['email']
+        session['role'] = user['role']
+        
+        return jsonify({
+            "message": "Login successful",
+            "role": user['role'],
+            "full_name": user['full_name']
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.post("/api/logout")
+def logout():
+    """Log out the current user."""
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
+
+@app.get("/api/current-user")
+def current_user():
+    """Get the current logged-in user."""
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+    
+    return jsonify({
+        "user_id": session['user_id'],
+        "full_name": session['full_name'],
+        "email": session['email'],
+        "role": session['role']
+    }), 200
 
 
 @app.post("/api/transcribe")
@@ -369,18 +528,22 @@ def get_submission(assignment_id):
 
 
 @app.post("/api/submissions")
+@login_required
 def create_or_update_submission():
     """Create or update a submission with accuracy and words missed."""
     try:
         data = request.get_json()
         assignment_id = data.get("assignment_id")
-        student_name = data.get("student_name", "")
         accuracy = data.get("accuracy")
         words_missed = data.get("words_missed", [])
         submitted = data.get("submitted", False)
         
-        # Check if submission already exists for this student and assignment
-        existing = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("student_name", student_name).execute()
+        # Use authenticated user's data
+        user_id = session['user_id']
+        student_name = session['full_name']
+        
+        # Check if submission already exists for this user and assignment
+        existing = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
         
         if existing.data:
             # Update existing submission
@@ -388,12 +551,13 @@ def create_or_update_submission():
                 "accuracy": accuracy,
                 "words_missed": words_missed,
                 "submitted": submitted
-            }).eq("assignment_id", assignment_id).eq("student_name", student_name).execute()
+            }).eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
             return jsonify(result.data[0])
         else:
             # Create new submission
             result = supabase.table("submissions").insert({
                 "assignment_id": assignment_id,
+                "user_id": user_id,
                 "student_name": student_name,
                 "accuracy": accuracy,
                 "words_missed": words_missed,
@@ -405,15 +569,18 @@ def create_or_update_submission():
 
 
 @app.post("/api/submit-assignment")
+@login_required
 def submit_assignment():
     """Submit an assignment (marks it as submitted)."""
     try:
         data = request.get_json()
         assignment_id = data.get("assignment_id")
-        student_name = data.get("student_name", "")
         
-        # Check if submission exists for this student and assignment
-        existing = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("student_name", student_name).execute()
+        # Use authenticated user's data
+        user_id = session['user_id']
+        
+        # Check if submission exists for this user and assignment
+        existing = supabase.table("submissions").select("*").eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
         
         if not existing.data:
             return jsonify({"error": "No submission found for this assignment"}), 404
@@ -421,7 +588,7 @@ def submit_assignment():
         # Update to mark as submitted
         result = supabase.table("submissions").update({
             "submitted": True
-        }).eq("assignment_id", assignment_id).eq("student_name", student_name).execute()
+        }).eq("assignment_id", assignment_id).eq("user_id", user_id).execute()
         
         return jsonify(result.data[0])
     except Exception as e:
@@ -434,4 +601,4 @@ def submit_assignment():
 # ----------------------------------------------------------
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

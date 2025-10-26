@@ -209,14 +209,6 @@ async function saveSubmissionData(evalJson) {
     .filter(w => w.status === "misread")
     .map(w => w.word);
   
-  const studentNameEl = document.getElementById('studentName');
-  const studentName = studentNameEl ? studentNameEl.value.trim() : '';
-  
-  if (!studentName) {
-    console.log('Student name not provided, skipping submission save');
-    return;
-  }
-  
   try {
     await fetch('/api/submissions', {
       method: 'POST',
@@ -225,7 +217,6 @@ async function saveSubmissionData(evalJson) {
       },
       body: JSON.stringify({
         assignment_id: parseInt(assignmentId),
-        student_name: studentName,
         accuracy: evalJson.accuracy,
         words_missed: misreads,
         submitted: false

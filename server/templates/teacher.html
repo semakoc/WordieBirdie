@@ -8,14 +8,43 @@
     #studentSelector { display: block; }
     #assignmentSelector { display: none; }
     #submissionsList { margin-top: 20px; }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-info {
+      font-size: 18px;
+      color: #1565c0;
+    }
+    .logout-btn {
+      background-color: #f44336;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    .logout-btn:hover {
+      background-color: #d32f2f;
+    }
   </style>
 </head>
 <body>
-  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-    <a href="/" style="padding: 0; background: none; text-decoration: none; display: inline-block;">
-      <img src="/static/WordieBirdieLogo.png" alt="WordieBirdie Logo" style="width: 60px; height: auto;">
-    </a>
-    <h1 style="margin: 0;">Teacher Dashboard</h1>
+  <div class="header-bar">
+    <div class="header-left">
+      <a href="/" style="padding: 0; background: none; text-decoration: none; display: inline-block;">
+        <img src="/static/WordyBirdyLogo.png" alt="WordyBirdy Logo" style="width: 60px; height: auto;">
+      </a>
+      <div>
+        <h1 style="margin: 0;">Teacher Dashboard</h1>
+        <p class="user-info" id="welcomeMessage">Loading...</p>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
   </div>
   
   <h2>Create New Assignment</h2>
@@ -94,6 +123,33 @@
     let allAssignments = [];
     let allSubmissions = [];
     let studentsList = [];
+    
+    // Load user info
+    async function loadUserInfo() {
+      try {
+        const response = await fetch('/api/current-user');
+        if (response.ok) {
+          const user = await response.json();
+          document.getElementById('welcomeMessage').textContent = `Welcome, ${user.full_name}!`;
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Error loading user info:', err);
+        window.location.href = '/';
+      }
+    }
+    
+    // Handle logout
+    async function handleLogout() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (err) {
+        console.error('Error logging out:', err);
+        window.location.href = '/';
+      }
+    }
     
     // Toggle assignment form visibility
     function toggleAssignmentForm() {
@@ -276,6 +332,7 @@
     }
     
     // Initialize on page load
+    loadUserInfo();
     initializeData();
     
     document.getElementById('assignmentForm').addEventListener('submit', async (e) => {

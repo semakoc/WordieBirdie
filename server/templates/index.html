@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>WordieBirdie - Home</title>
+  <title>WordyBirdy - Login</title>
   <link rel="stylesheet" href="/static/style.css">
   <style>
     body {
       text-align: center;
-      padding-top: 80px;
+      padding-top: 50px;
     }
-    .home-container {
+    .auth-container {
       display: inline-block;
+      max-width: 500px;
+      width: 100%;
     }
     .title-container {
       display: flex;
@@ -30,32 +32,220 @@
       font-size: 26px;
       color: #1565c0;
       font-style: italic;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
       font-weight: 400;
     }
-    p {
-      margin-bottom: 25px;
-      font-size: 20px;
-    }
-    .home-container button {
-      font-size: 22px;
-      padding: 20px 50px;
-      margin: 12px;
+    .auth-form {
+      background-color: white;
+      padding: 40px;
       border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1565c0;
+      font-weight: 500;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #90caf9;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .error-message {
+      color: #d32f2f;
+      margin-top: 10px;
+      display: none;
+    }
+    .success-message {
+      color: #388e3c;
+      margin-top: 10px;
+      display: none;
+    }
+    .auth-toggle {
+      margin-top: 20px;
+      color: #1565c0;
+    }
+    .auth-toggle a {
+      color: #2196f3;
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      padding: 0;
+      box-shadow: none;
+      display: inline;
+    }
+    .auth-toggle a:hover {
+      background: none;
+      transform: none;
+      box-shadow: none;
+      color: #1976d2;
+    }
+    #signupForm {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="home-container">
+  <div class="auth-container">
     <div class="title-container">
-      <img src="/static/WordieBirdieLogo.png" alt="WordieBirdie Logo" class="logo">
-      <h1>WordieBirdie</h1>
+      <img src="/static/WordyBirdyLogo.png" alt="WordyBirdy Logo" class="logo">
+      <h1>WordyBirdy</h1>
     </div>
     <p class="tagline">Soaring to new heights in reading, one word at a time.</p>
-    <p>Choose your role:</p>
-    <button onclick="window.location.href='/teacher'">Teacher</button>
-    <button onclick="window.location.href='/student'">Student</button>
+    
+    <!-- Login Form -->
+    <div id="loginForm" class="auth-form">
+      <h2 style="margin-top: 0;">Log In</h2>
+      <form id="loginFormElement">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit">Log In</button>
+        <p class="error-message" id="loginError"></p>
+      </form>
+      <div class="auth-toggle">
+        Don't have an account? <a onclick="showSignup()">Sign up</a>
+      </div>
+    </div>
+    
+    <!-- Signup Form -->
+    <div id="signupForm" class="auth-form">
+      <h2 style="margin-top: 0;">Sign Up</h2>
+      <form id="signupFormElement">
+        <div class="form-group">
+          <label for="signupFullName">Full Name</label>
+          <input type="text" id="signupFullName" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label for="signupRole">I am a:</label>
+          <select id="signupRole" required>
+            <option value="">Select role</option>
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+          </select>
+        </div>
+        <button type="submit">Sign Up</button>
+        <p class="error-message" id="signupError"></p>
+        <p class="success-message" id="signupSuccess"></p>
+      </form>
+      <div class="auth-toggle">
+        Already have an account? <a onclick="showLogin()">Log in</a>
+      </div>
+    </div>
   </div>
+  
+  <script>
+    function showSignup() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'block';
+    }
+    
+    function showLogin() {
+      document.getElementById('signupForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+    }
+    
+    // Handle login
+    document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errorEl = document.getElementById('loginError');
+      
+      errorEl.style.display = 'none';
+      
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Redirect based on role
+          if (data.role === 'student') {
+            window.location.href = '/student';
+          } else if (data.role === 'teacher') {
+            window.location.href = '/teacher';
+          }
+        } else {
+          errorEl.textContent = data.error || 'Login failed';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'An error occurred. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    });
+    
+    // Handle signup
+    document.getElementById('signupFormElement').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fullName = document.getElementById('signupFullName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const role = document.getElementById('signupRole').value;
+      const errorEl = document.getElementById('signupError');
+      const successEl = document.getElementById('signupSuccess');
+      
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      
+      try {
+        const response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name: fullName, email, password, role })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          successEl.textContent = 'Account created successfully! Logging you in...';
+          successEl.style.display = 'block';
+          
+          // Auto-login after signup
+          setTimeout(() => {
+            if (data.role === 'student') {
+              window.location.href = '/student';
+            } else if (data.role === 'teacher') {
+              window.location.href = '/teacher';
+            }
+          }, 1000);
+        } else {
+          errorEl.textContent = data.error || 'Signup failed';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'An error occurred. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    });
+  </script>
 </body>
 </html>
